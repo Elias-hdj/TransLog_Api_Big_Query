@@ -1,0 +1,97 @@
+# ============================================
+# TransLog_Api_Big_Query - .gitignore
+# ============================================
+
+# ---------- SECRETS & CREDENTIALS ----------
+.env
+.env.local
+.env.*.local
+!.env.example
+*.json
+service-account*.json
+credentials*.json
+secrets/
+*.key
+*.pem
+*.p12
+
+# Exception : autoriser les JSON utiles (ex: config de dashboard)
+!config/*.json
+!dashboard/*.json
+
+# ---------- DONNEES LOCALES ----------
+data/raw/*
+data/processed/*
+data/*.csv
+data/*.parquet
+data/*.xlsx
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# ---------- PYTHON ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ---------- ENVIRONNEMENTS VIRTUELS ----------
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ---------- JUPYTER NOTEBOOKS ----------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+# Decommenter la ligne suivante si tu ne veux PAS versionner les outputs
+# *.ipynb
+
+# ---------- LOGS ----------
+*.log
+logs/
+pipeline.log
+
+# ---------- TESTS & COUVERTURE ----------
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ---------- IDE & EDITEURS ----------
+.vscode/
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# ---------- SYSTEME ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- DOCKER ----------
+*.pid
+docker-compose.override.yml
+
+# ---------- TERRAFORM / GCP (si un jour) ----------
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# ---------- DIVERS ----------
+*.bak
+*.tmp
+*.cache

@@ -2,14 +2,13 @@ name: TransLog Pipeline Quotidien
 
 on:
   schedule:
-    # Tous les jours à 5h UTC = 7h Paris (heure d'été) / 6h Paris (hiver)
     - cron: '0 5 * * *'
-  workflow_dispatch:  # déclenchement manuel depuis l'onglet Actions
+  workflow_dispatch:
 
 jobs:
   collect-and-load:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
 
     steps:
       - name: Checkout du dépôt
@@ -18,7 +17,7 @@ jobs:
       - name: Installer Python
         uses: actions/setup-python@v5
         with:
-    python-version: '3.11'
+          python-version: '3.11'
 
       - name: Installer les dépendances
         run: |

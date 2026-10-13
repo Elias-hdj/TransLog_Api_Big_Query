@@ -2,7 +2,7 @@
 
 from src.api_carburant import fetch_fuel_prices
 from src.api_meteo import fetch_weather
-from src.big_query_utils import get_bq_client, upsert, log_run
+from src.bigquery_utils import get_bq_client, upsert, log_run
 from src.logger import get_logger
 
 log = get_logger("pipeline")

@@ -18,23 +18,22 @@ FUEL_FIELDS = {
     "E85":    ("e85_prix",    "e85_maj"),
 }
 
+# L'API Opendatasoft limite chaque requete a 100 enregistrements
+PAGE_SIZE = 100
 
-def fetch_fuel_prices(max_records: int = 10000) -> pd.DataFrame:
-    """Récupère les prix des carburants via pagination.
 
-    L'API Opendatasoft limite chaque requête à 100 enregistrements.
-    On pagine avec limit/offset pour récupérer l'ensemble des stations.
+def fetch_fuel_prices(max_records: int = 5000) -> pd.DataFrame:
+    """Recupere les prix des carburants via pagination.
+
+    L'API renvoie une ligne par station, avec un champ de prix par carburant.
+    On transforme cela en une ligne par (station, carburant).
     """
     rows = []
-    page_size = 100
     offset = 0
     total_fetched = 0
 
     while total_fetched < max_records:
-        params = {
-            "limit": page_size,
-            "offset": offset,
-        }
+        params = {"limit": PAGE_SIZE, "offset": offset}
         try:
             resp = requests.get(FUEL_API_URL, params=params, timeout=30)
             resp.raise_for_status()
@@ -72,11 +71,10 @@ def fetch_fuel_prices(max_records: int = 10000) -> pd.DataFrame:
                 rows.append(row)
 
         total_fetched += len(results)
-        offset += page_size
+        offset += PAGE_SIZE
         log.info(f"Page recuperee : {len(results)} stations (total {total_fetched})")
 
-        # Sécurité : si on a moins de résultats que la page, on a atteint la fin
-        if len(results) < page_size:
+        if len(results) < PAGE_SIZE:
             break
 
     df = pd.DataFrame(rows)
@@ -91,5 +89,6 @@ def fetch_fuel_prices(max_records: int = 10000) -> pd.DataFrame:
     df["date_collecte"] = pd.to_datetime(df["date_collecte"]).dt.date
     df["date_maj"] = pd.to_datetime(df["date_maj"], errors="coerce")
     df["ingestion_timestamp"] = pd.Timestamp.now(tz="UTC")
+
     log.info(f"{len(df)} lignes carburant pretes.")
     return df

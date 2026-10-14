@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `translog-pipeline.logistics.fuel_prices` (
   longitude            FLOAT64,
   carburant            STRING    NOT NULL,
   prix                 FLOAT64,
-  date_maj             DATETIME,
+  date_maj             TIMESTAMP,
   ingestion_timestamp  TIMESTAMP
 )
 PARTITION BY date_collecte

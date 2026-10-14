@@ -28,6 +28,18 @@ def get_bq_client() -> bigquery.Client:
     )
     return bigquery.Client(project=PROJECT_ID, credentials=creds)
 
+def upsert(df: pd.DataFrame, table: str, key_cols: list, bq: bigquery.Client):
+    if df.empty:
+        log.warning(f"DataFrame vide pour {table}, rien a charger.")
+        return
+
+    # Normalisation des colonnes DATE pour eviter les conflits de types
+    for col in ["date_collecte", "date_prevision"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+
+    staging = f"{PROJECT_ID}.{DATASET}.{table}_staging"
+    # ... reste inchangé
 
 def upsert(df: pd.DataFrame, table: str, key_cols: list, bq: bigquery.Client):
     if df.empty:

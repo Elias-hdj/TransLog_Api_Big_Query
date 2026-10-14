@@ -16,7 +16,7 @@ def main():
 
     # --- Carburant ---
     try:
-        df_fuel = fetch_fuel_prices()
+        df_fuel = fetch_fuel_prices(limit=10000)
         upsert(df_fuel, "fuel_prices",
                ["date_collecte", "id_station", "carburant"], bq)
         try:

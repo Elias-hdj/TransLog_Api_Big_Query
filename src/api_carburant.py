@@ -38,7 +38,7 @@ def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
     for rec in data.get("results", []):
         geom = rec.get("geom") or {}
         base = {
-            "date_collecte": date.today().isoformat(),
+            "date_collecte": date.today(),
             "id_station": str(rec.get("id")),
             "nom_station": rec.get("adresse"),
             "adresse": rec.get("adresse"),
@@ -49,6 +49,7 @@ def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
             "latitude": geom.get("lat"),
             "longitude": geom.get("lon"),
         }
+
 
         for carb, (price_field, maj_field) in FUEL_FIELDS.items():
             prix = rec.get(price_field)
@@ -71,4 +72,8 @@ def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
     df = df.drop_duplicates(subset=["date_collecte", "id_station", "carburant"])
     df["ingestion_timestamp"] = pd.Timestamp.utcnow()
     log.info(f"{len(df)} lignes carburant pretes.")
+    
+    df["date_collecte"] = pd.to_datetime(df["date_collecte"]).dt.date
+    df["date_maj"] = pd.to_datetime(df["date_maj"], errors="coerce")
+    df["ingestion_timestamp"] = pd.Timestamp.now(tz="UTC")
     return df

@@ -35,11 +35,11 @@ def fetch_weather(forecast_days: int = 7) -> pd.DataFrame:
         daily = data.get("daily", {})
         for i, d in enumerate(daily.get("time", [])):
             rows.append({
-                "date_collecte": date.today().isoformat(),
+                "date_collecte": date.today(),
                 "hub": h["hub"],
                 "latitude": h["lat"],
                 "longitude": h["lon"],
-                "date_prevision": d,
+                "date_prevision": pd.to_datetime(d).date(),
                 "temp_max": daily["temperature_2m_max"][i],
                 "temp_min": daily["temperature_2m_min"][i],
                 "precipitation": daily["precipitation_sum"][i],
@@ -49,4 +49,7 @@ def fetch_weather(forecast_days: int = 7) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     log.info(f"{len(df)} lignes météo prêtes.")
+
+    df["date_collecte"] = pd.to_datetime(df["date_collecte"]).dt.date
+    df["date_prevision"] = pd.to_datetime(df["date_prevision"]).dt.date
     return df

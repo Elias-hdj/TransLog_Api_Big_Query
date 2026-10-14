@@ -4,7 +4,7 @@ import os
 import json
 import base64
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 from google.cloud import bigquery
@@ -17,10 +17,9 @@ log = get_logger("bigquery")
 
 
 def get_bq_client() -> bigquery.Client:
-    """Crée un client BigQuery depuis une clé de service encodée en base64."""
     key_b64 = os.environ.get("GCP_SA_KEY_B64")
     if not key_b64:
-        log.warning("GCP_SA_KEY_B64 absent : utilisation des credentials par défaut.")
+        log.warning("GCP_SA_KEY_B64 absent : utilisation des credentials par defaut.")
         return bigquery.Client(project=PROJECT_ID)
 
     key_json = base64.b64decode(key_b64).decode("utf-8")
@@ -30,10 +29,9 @@ def get_bq_client() -> bigquery.Client:
     return bigquery.Client(project=PROJECT_ID, credentials=creds)
 
 
-def upsert(df: pd.DataFrame, table: str, key_cols: list[str], bq: bigquery.Client):
-    """Insère ou met à jour les lignes via un MERGE BigQuery."""
+def upsert(df: pd.DataFrame, table: str, key_cols: list, bq: bigquery.Client):
     if df.empty:
-        log.warning(f"DataFrame vide pour {table}, rien à charger.")
+        log.warning(f"DataFrame vide pour {table}, rien a charger.")
         return
 
     staging = f"{PROJECT_ID}.{DATASET}.{table}_staging"
@@ -59,20 +57,23 @@ def upsert(df: pd.DataFrame, table: str, key_cols: list[str], bq: bigquery.Clien
     WHEN NOT MATCHED THEN INSERT ({insert_cols}) VALUES ({insert_vals})
     """
     bq.query(merge_sql).result()
-    log.info(f"MERGE terminé pour {table} ({len(df)} lignes).")
+    log.info(f"MERGE termine pour {table} ({len(df)} lignes).")
 
 
 def log_run(bq: bigquery.Client, source: str, statut: str, nb: int, msg: str = ""):
-    """Enregistre une exécution dans execution_log."""
+    """Enregistre une execution dans execution_log."""
+    # IMPORTANT : utiliser un datetime tz-aware pour BigQuery (TIMESTAMP)
+    now_utc = datetime.now(timezone.utc)
     row = [{
         "run_id": str(uuid.uuid4()),
-        "date_run": datetime.utcnow().isoformat(),
+        "date_run": now_utc,
         "source": source,
         "statut": statut,
         "nb_lignes": nb,
         "message": msg,
     }]
     df = pd.DataFrame(row)
+    df["date_run"] = pd.to_datetime(df["date_run"], utc=True)
     bq.load_table_from_dataframe(
         df, f"{PROJECT_ID}.{DATASET}.execution_log"
     ).result()

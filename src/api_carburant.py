@@ -22,7 +22,7 @@ FUEL_FIELDS = {
 PAGE_SIZE = 100
 
 
-def fetch_fuel_prices(max_records: int = 5000) -> pd.DataFrame:
+def fetch_fuel_prices(max_records: int = 000) -> pd.DataFrame:
     """Recupere les prix des carburants via pagination.
 
     L'API renvoie une ligne par station, avec un champ de prix par carburant.
@@ -87,7 +87,7 @@ def fetch_fuel_prices(max_records: int = 5000) -> pd.DataFrame:
     df = df[(df["prix"] >= PRIX_MIN) & (df["prix"] <= PRIX_MAX)]
     df = df.drop_duplicates(subset=["date_collecte", "id_station", "carburant"])
     df["date_collecte"] = pd.to_datetime(df["date_collecte"]).dt.date
-    df["date_maj"] = pd.to_datetime(df["date_maj"], errors="coerce")
+    df["date_maj"] = pd.to_datetime(df["date_maj"], errors="coerce", utc=True).dt.tz_localize(None)
     df["ingestion_timestamp"] = pd.Timestamp.now(tz="UTC")
 
     log.info(f"{len(df)} lignes carburant pretes.")

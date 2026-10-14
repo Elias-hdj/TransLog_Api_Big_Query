@@ -10,40 +10,45 @@ from src.logger import get_logger
 log = get_logger("fuel")
 
 
-def fetch_fuel_prices(limit: int = 200) -> pd.DataFrame:
-    """Récupère les prix des carburants et renvoie un DataFrame nettoyé."""
+def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
+    """Récupère les prix des carburants et renvoie un DataFrame nettoyé.
+
+    Aucun filtre côté API : on récupère les enregistrements puis on filtre
+    côté Python sur le type de carburant.
+    """
     rows = []
-    for carb in CARBURANTS:
-        params = {
-            "limit": limit,
-            "where": f"carburant='{carb}'",
-            "order_by": "prix ASC",
-        }
-        try:
-            resp = requests.get(FUEL_API_URL, params=params, timeout=30)
-            resp.raise_for_status()
-        except requests.RequestException as e:
-            log.error(f"Erreur API carburant pour {carb} : {e}")
+    params = {
+        "limit": limit,
+    }
+    try:
+        resp = requests.get(FUEL_API_URL, params=params, timeout=30)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        log.error(f"Erreur API carburant : {e}")
+        return pd.DataFrame()
+
+    data = resp.json()
+    for rec in data.get("results", []):
+        carb = rec.get("carburant")
+        if carb not in CARBURANTS:
             continue
 
-        data = resp.json()
-        for rec in data.get("results", []):
-            geom = rec.get("geom") or {}
-            rows.append({
-                "date_collecte": date.today().isoformat(),
-                "id_station": rec.get("id"),
-                "nom_station": rec.get("adresse"),
-                "adresse": rec.get("adresse"),
-                "ville": rec.get("ville"),
-                "code_postal": rec.get("code_postal"),
-                "departement": rec.get("departement"),
-                "region": rec.get("region"),
-                "latitude": geom.get("lat"),
-                "longitude": geom.get("lon"),
-                "carburant": carb,
-                "prix": rec.get("prix"),
-                "date_maj": rec.get("date_maj"),
-            })
+        geom = rec.get("geom") or {}
+        rows.append({
+            "date_collecte": date.today().isoformat(),
+            "id_station": rec.get("id"),
+            "nom_station": rec.get("adresse"),
+            "adresse": rec.get("adresse"),
+            "ville": rec.get("ville"),
+            "code_postal": rec.get("cp") or rec.get("code_postal"),
+            "departement": rec.get("departement"),
+            "region": rec.get("region"),
+            "latitude": geom.get("lat"),
+            "longitude": geom.get("lon"),
+            "carburant": carb,
+            "prix": rec.get("prix"),
+            "date_maj": rec.get("date_maj"),
+        })
 
     df = pd.DataFrame(rows)
     if df.empty:

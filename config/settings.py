@@ -9,7 +9,7 @@ DATA_RAW = ROOT_DIR / "data" / "raw"
 DATA_PROCESSED = ROOT_DIR / "data" / "processed"
 
 # ---------- GCP ----------
-PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "ton-projet-gcp")
+PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "translog-pipeline")
 DATASET = "logistics"
 
 # ---------- APIs ----------

@@ -15,7 +15,6 @@ secrets/
 *.pem
 *.p12
 
-# Exception : autoriser les JSON utiles (ex: config de dashboard)
 !config/*.json
 !dashboard/*.json
 
@@ -51,8 +50,6 @@ ENV/
 # ---------- JUPYTER NOTEBOOKS ----------
 .ipynb_checkpoints/
 *.ipynb_checkpoints
-# Decommenter la ligne suivante si tu ne veux PAS versionner les outputs
-# *.ipynb
 
 # ---------- LOGS ----------
 *.log
@@ -85,7 +82,7 @@ desktop.ini
 *.pid
 docker-compose.override.yml
 
-# ---------- TERRAFORM / GCP (si un jour) ----------
+# ---------- TERRAFORM / GCP ----------
 .terraform/
 *.tfstate
 *.tfstate.*

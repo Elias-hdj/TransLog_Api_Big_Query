@@ -77,3 +77,10 @@ def log_run(bq: bigquery.Client, source: str, statut: str, nb: int, msg: str = "
     bq.load_table_from_dataframe(
         df, f"{PROJECT_ID}.{DATASET}.execution_log"
     ).result()
+
+    bq.query(merge_sql).result()
+    log.info(f"MERGE termine pour {table} ({len(df)} lignes).")
+
+    # Nettoyage automatique du staging
+    bq.delete_table(staging, not_found_ok=True)
+    log.info(f"Staging supprime : {staging}")

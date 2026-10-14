@@ -11,15 +11,12 @@ log = get_logger("fuel")
 
 
 def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
-    """Récupère les prix des carburants et renvoie un DataFrame nettoyé.
+    """Recupere les prix des carburants et renvoie un DataFrame nettoye.
 
-    Aucun filtre côté API : on récupère les enregistrements puis on filtre
-    côté Python sur le type de carburant.
+    Aucun filtre cote API : on filtre le carburant cote Python.
     """
     rows = []
-    params = {
-        "limit": limit,
-    }
+    params = {"limit": limit}
     try:
         resp = requests.get(FUEL_API_URL, params=params, timeout=30)
         resp.raise_for_status()
@@ -52,7 +49,7 @@ def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     if df.empty:
-        log.warning("Aucune donnée carburant récupérée.")
+        log.warning("Aucune donnee carburant recuperee.")
         return df
 
     df = df.dropna(subset=["id_station", "prix"])
@@ -60,5 +57,5 @@ def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
     df = df[(df["prix"] >= PRIX_MIN) & (df["prix"] <= PRIX_MAX)]
     df = df.drop_duplicates(subset=["date_collecte", "id_station", "carburant"])
     df["ingestion_timestamp"] = pd.Timestamp.utcnow()
-    log.info(f"{len(df)} lignes carburant prêtes.")
+    log.info(f"{len(df)} lignes carburant pretes.")
     return df

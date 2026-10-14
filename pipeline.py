@@ -1,4 +1,4 @@
-"""Point d'entrée du pipeline TransLog."""
+"""Point d'entree du pipeline TransLog."""
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -22,15 +22,15 @@ def main():
         try:
             log_run(bq, "fuel", "OK", len(df_fuel))
         except Exception:
-            log.exception("Impossible d'écrire le log fuel dans BigQuery")
+            log.exception("Impossible d'ecrire le log fuel")
     except Exception as e:
         log.exception("Echec collecte carburant")
         try:
             log_run(bq, "fuel", "ERROR", 0, str(e))
         except Exception:
-            log.exception("Impossible d'écrire le log d'erreur fuel")
+            log.exception("Impossible d'ecrire le log d'erreur fuel")
 
-    # --- Météo ---
+    # --- Meteo ---
     try:
         df_weather = fetch_weather()
         upsert(df_weather, "weather_daily",
@@ -38,13 +38,13 @@ def main():
         try:
             log_run(bq, "weather", "OK", len(df_weather))
         except Exception:
-            log.exception("Impossible d'écrire le log weather dans BigQuery")
+            log.exception("Impossible d'ecrire le log weather")
     except Exception as e:
-        log.exception("Echec collecte météo")
+        log.exception("Echec collecte meteo")
         try:
             log_run(bq, "weather", "ERROR", 0, str(e))
         except Exception:
-            log.exception("Impossible d'écrire le log d'erreur weather")
+            log.exception("Impossible d'ecrire le log d'erreur weather")
 
 
 if __name__ == "__main__":

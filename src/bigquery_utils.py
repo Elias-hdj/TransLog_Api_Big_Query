@@ -19,7 +19,7 @@ log = get_logger("bigquery")
 def get_bq_client() -> bigquery.Client:
     key_b64 = os.environ.get("GCP_SA_KEY_B64")
     if not key_b64:
-        log.warning("GCP_SA_KEY_B64 absent : utilisation des credentials par defaut.")
+        log.warning("GCP_SA_KEY_B64 absent : credentials par defaut.")
         return bigquery.Client(project=PROJECT_ID)
 
     key_json = base64.b64decode(key_b64).decode("utf-8")
@@ -58,11 +58,11 @@ def upsert(df: pd.DataFrame, table: str, key_cols: list, bq: bigquery.Client):
     """
     bq.query(merge_sql).result()
     log.info(f"MERGE termine pour {table} ({len(df)} lignes).")
+    bq.delete_table(staging, not_found_ok=True)
 
 
 def log_run(bq: bigquery.Client, source: str, statut: str, nb: int, msg: str = ""):
-    """Enregistre une execution dans execution_log."""
-    # IMPORTANT : utiliser un datetime tz-aware pour BigQuery (TIMESTAMP)
+    """Enregistre une execution dans execution_log (timestamp UTC tz-aware)."""
     now_utc = datetime.now(timezone.utc)
     row = [{
         "run_id": str(uuid.uuid4()),
@@ -77,10 +77,3 @@ def log_run(bq: bigquery.Client, source: str, statut: str, nb: int, msg: str = "
     bq.load_table_from_dataframe(
         df, f"{PROJECT_ID}.{DATASET}.execution_log"
     ).result()
-
-    bq.query(merge_sql).result()
-    log.info(f"MERGE termine pour {table} ({len(df)} lignes).")
-
-    # Nettoyage automatique du staging
-    bq.delete_table(staging, not_found_ok=True)
-    log.info(f"Staging supprime : {staging}")

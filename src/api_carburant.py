@@ -19,47 +19,65 @@ FUEL_FIELDS = {
 }
 
 
-def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
-    """Recupere les prix des carburants et renvoie un DataFrame nettoye.
+def fetch_fuel_prices(max_records: int = 10000) -> pd.DataFrame:
+    """Récupère les prix des carburants via pagination.
 
-    L'API renvoie une ligne par station, avec un champ de prix par carburant.
-    On transforme cela en une ligne par (station, carburant).
+    L'API Opendatasoft limite chaque requête à 100 enregistrements.
+    On pagine avec limit/offset pour récupérer l'ensemble des stations.
     """
     rows = []
-    params = {"limit": limit}
-    try:
-        resp = requests.get(FUEL_API_URL, params=params, timeout=30)
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        log.error(f"Erreur API carburant : {e}")
-        return pd.DataFrame()
+    page_size = 100
+    offset = 0
+    total_fetched = 0
 
-    data = resp.json()
-    for rec in data.get("results", []):
-        geom = rec.get("geom") or {}
-        base = {
-            "date_collecte": date.today(),
-            "id_station": str(rec.get("id")),
-            "nom_station": rec.get("adresse"),
-            "adresse": rec.get("adresse"),
-            "ville": rec.get("ville"),
-            "code_postal": rec.get("cp"),
-            "departement": rec.get("code_departement") or rec.get("departement"),
-            "region": rec.get("region"),
-            "latitude": geom.get("lat"),
-            "longitude": geom.get("lon"),
+    while total_fetched < max_records:
+        params = {
+            "limit": page_size,
+            "offset": offset,
         }
+        try:
+            resp = requests.get(FUEL_API_URL, params=params, timeout=30)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            log.error(f"Erreur API carburant (offset={offset}) : {e}")
+            break
 
+        data = resp.json()
+        results = data.get("results", [])
+        if not results:
+            break
 
-        for carb, (price_field, maj_field) in FUEL_FIELDS.items():
-            prix = rec.get(price_field)
-            if prix is None:
-                continue
-            base_row = base.copy()
-            base_row["carburant"] = carb
-            base_row["prix"] = prix
-            base_row["date_maj"] = rec.get(maj_field)
-            rows.append(base_row)
+        for rec in results:
+            geom = rec.get("geom") or {}
+            base = {
+                "date_collecte": date.today(),
+                "id_station": str(rec.get("id")),
+                "nom_station": rec.get("adresse"),
+                "adresse": rec.get("adresse"),
+                "ville": rec.get("ville"),
+                "code_postal": rec.get("cp"),
+                "departement": rec.get("code_departement") or rec.get("departement"),
+                "region": rec.get("region"),
+                "latitude": geom.get("lat"),
+                "longitude": geom.get("lon"),
+            }
+            for carb, (price_field, maj_field) in FUEL_FIELDS.items():
+                prix = rec.get(price_field)
+                if prix is None:
+                    continue
+                row = base.copy()
+                row["carburant"] = carb
+                row["prix"] = prix
+                row["date_maj"] = rec.get(maj_field)
+                rows.append(row)
+
+        total_fetched += len(results)
+        offset += page_size
+        log.info(f"Page recuperee : {len(results)} stations (total {total_fetched})")
+
+        # Sécurité : si on a moins de résultats que la page, on a atteint la fin
+        if len(results) < page_size:
+            break
 
     df = pd.DataFrame(rows)
     if df.empty:
@@ -70,10 +88,8 @@ def fetch_fuel_prices(limit: int = 100) -> pd.DataFrame:
     df["prix"] = pd.to_numeric(df["prix"], errors="coerce")
     df = df[(df["prix"] >= PRIX_MIN) & (df["prix"] <= PRIX_MAX)]
     df = df.drop_duplicates(subset=["date_collecte", "id_station", "carburant"])
-    df["ingestion_timestamp"] = pd.Timestamp.utcnow()
-    log.info(f"{len(df)} lignes carburant pretes.")
-    
     df["date_collecte"] = pd.to_datetime(df["date_collecte"]).dt.date
     df["date_maj"] = pd.to_datetime(df["date_maj"], errors="coerce")
     df["ingestion_timestamp"] = pd.Timestamp.now(tz="UTC")
+    log.info(f"{len(df)} lignes carburant pretes.")
     return df
